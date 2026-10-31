@@ -1,0 +1,319 @@
+{
+  "name": "Hermex — NPS Automação",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Respostas do formulário 1",
+          "mode": "name"
+        },
+        "event": "rowAdded"
+      },
+      "name": "Nova resposta do Forms",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        200
+      ],
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "REPLACE",
+          "name": "Google Sheets Trigger"
+        }
+      },
+      "id": "n0"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "id_pedido",
+              "type": "string",
+              "value": "={{ $json['ID do Pedido'] }}"
+            },
+            {
+              "id": "a2",
+              "name": "nota",
+              "type": "number",
+              "value": "={{ Number($json['Nota NPS (0-10)']) }}"
+            },
+            {
+              "id": "a3",
+              "name": "comentario",
+              "type": "string",
+              "value": "={{ $json['Comentário'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Normalizar campos",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        200
+      ],
+      "id": "n1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "pesquisa_satisfacao",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "id_pedido",
+              "lookupValue": "={{ $json.id_pedido }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Buscar cliente por id_pedido",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        440,
+        200
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE",
+          "name": "Google Sheets"
+        }
+      },
+      "alwaysOutputData": true,
+      "id": "n2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $('Normalizar campos').item.json.nota }}",
+              "rightValue": 7,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Detrator? (nota < 7)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        200
+      ],
+      "id": "n3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({contents:[{parts:[{text:\"Você classifica comentários de clientes de uma empresa de logística. Classifique o comentário abaixo em UMA das categorias: Atraso, Defeito, Atendimento, Embalagem, Outro. Responda APENAS com uma das seguintes palavras: Atraso, Defeito, Atendimento, Embalagem, Outro. Nenhuma explicação adicional, sem pontuação.\\n\\nComentário: \" + $('Normalizar campos').item.json.comentario}]}],generationConfig:{temperature:0,maxOutputTokens:20,thinkingConfig:{thinkingBudget:0}}}) }}",
+        "options": {}
+      },
+      "name": "Gemini — classificar comentário",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE",
+          "name": "Gemini API Key (header x-goog-api-key)"
+        }
+      },
+      "id": "n4"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "categoria",
+              "type": "string",
+              "value": "={{ ['Atraso','Defeito','Atendimento','Embalagem','Outro'].find(c => c.toLowerCase() === String($json.candidates[0].content.parts[0].text).trim().replace(/[^A-Za-zÀ-ú]/g,'').toLowerCase()) || 'Outro' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Validar categoria",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1100,
+        100
+      ],
+      "id": "n5"
+    },
+    {
+      "parameters": {
+        "sendTo": "posvendas@exemplo.com",
+        "subject": "=[NPS] Detrator: {{ $('Buscar cliente por id_pedido').item.json.cliente }} — {{ $json.categoria }}",
+        "message": "=<p><b>Cliente:</b> {{ $('Buscar cliente por id_pedido').item.json.cliente }}</p><p><b>Pedido:</b> {{ $('Normalizar campos').item.json.id_pedido }}</p><p><b>Nota NPS:</b> {{ $('Normalizar campos').item.json.nota }}</p><p><b>Categoria (IA):</b> {{ $json.categoria }}</p><p><b>Comentário original:</b> {{ $('Normalizar campos').item.json.comentario }}</p><p><i>A categoria foi sugerida por IA. Valide manualmente antes de agir.</i></p>",
+        "options": {},
+        "emailType": "html"
+      },
+      "name": "Gmail — notificar pós-vendas",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1320,
+        100
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE",
+          "name": "Gmail"
+        }
+      },
+      "id": "n6"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Buscar cliente por id_pedido').item.json.email_cliente }}",
+        "subject": "=Obrigado pelo seu feedback, {{ $('Buscar cliente por id_pedido').item.json.cliente }}!",
+        "message": "=<p>Olá, {{ $('Buscar cliente por id_pedido').item.json.cliente }}!</p><p>Obrigado por avaliar sua experiência com a Hermex Log (nota {{ $('Normalizar campos').item.json.nota }}). Seu feedback nos ajuda a melhorar nossas entregas.</p><p>Equipe Hermex Log</p>",
+        "options": {},
+        "emailType": "html"
+      },
+      "name": "Gmail — agradecer cliente",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        880,
+        320
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE",
+          "name": "Gmail"
+        }
+      },
+      "id": "n7"
+    }
+  ],
+  "connections": {
+    "Nova resposta do Forms": {
+      "main": [
+        [
+          {
+            "node": "Normalizar campos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar campos": {
+      "main": [
+        [
+          {
+            "node": "Buscar cliente por id_pedido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar cliente por id_pedido": {
+      "main": [
+        [
+          {
+            "node": "Detrator? (nota < 7)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detrator? (nota < 7)": {
+      "main": [
+        [
+          {
+            "node": "Gemini — classificar comentário",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Gmail — agradecer cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini — classificar comentário": {
+      "main": [
+        [
+          {
+            "node": "Validar categoria",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar categoria": {
+      "main": [
+        [
+          {
+            "node": "Gmail — notificar pós-vendas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

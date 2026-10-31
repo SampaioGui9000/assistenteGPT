@@ -1,0 +1,19 @@
+flowchart TD
+    A([Início — Pedido Enviado]) --> B[Registrar envio na planilha de handoff]
+    B --> C[Enviar e-mail de notificação ao pós-vendas]
+    C --> D[Aguardar prazo e consultar rastreio]
+    D --> E{Entrega confirmada?}
+    E -- Não --> W[Aguardar e verificar novamente]
+    W --> D
+    E -- Sim --> F[Registrar data de recebimento]
+    F --> G[Enviar pesquisa de satisfação]
+    G --> H[Registrar resposta de NPS]
+    H --> I{Cliente insatisfeito? nota menor que 7}
+    I -- Sim --> J[Classificar feedback com IA]
+    J --> K[Notificar equipe de pós-vendas]
+    K --> L[Tratar cliente: contato, devolução ou reembolso]
+    L --> Z([Fim — Ciclo Encerrado])
+    I -- Não --> M[Enviar e-mail de agradecimento]
+    M --> Z
+    classDef auto stroke:#e00000,stroke-width:3px,fill:#fff;
+    class B,C,D,G,H,J,K,M auto;

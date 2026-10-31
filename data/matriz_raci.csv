@@ -1,0 +1,11 @@
+Atividade,Equipe de Vendas,Equipe de Pós-Vendas,Sistema N8N,Sistema de Correios,Liderança
+1. Registrar envio na planilha de handoff,A/R,I,I,-,I
+2. Enviar e-mail de notificação ao pós-vendas,C,A,R,-,I
+3. Transportar e entregar o pedido,I,A,I,R,I
+4. Confirmar entrega (monitorar rastreio / aguardar e rechecar),I,A,R,C,I
+5. Enviar pesquisa de satisfação (Google Forms),I,A,R,-,I
+6. Registrar respostas de NPS na planilha,I,A,R,-,I
+7. Classificar feedback do detrator com IA (Gemini),I,A,R,-,I
+8. Notificar equipe de pós-vendas (e-mail com validação humana),I,A,R,-,I
+"9. Tratar cliente insatisfeito (contato, devolução, reembolso)",C,A/R,-,C,I
+10. Analisar NPS/SLA e definir ações de melhoria,C,R,I,C,A
