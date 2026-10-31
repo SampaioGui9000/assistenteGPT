@@ -2,7 +2,7 @@
 
 Projeto de transformação digital para a Hermex Log (logística): padronizar a comunicação de prazos, mapear e automatizar o pós-vendas, classificar feedbacks de NPS com IA e acompanhar tudo em dashboard e base de conhecimento.
 
-> ⚠️ **Status honesto do repositório:** a parte de **dados, análise, planejamento, documentação e arquivos importáveis** está pronta. Os artefatos que vivem em ferramentas externas (GPT no ChatGPT, board no Miro, workflow no n8n, dashboard no Looker Studio, Notion, Forms) precisam ser **criados/importados por você** com os guias deste repositório, e os screenshots devem ser adicionados depois. Nada foi testado nessas ferramentas.
+> ⚠️ **Status honesto do repositório:** a parte de **dados, análise, planejamento, documentação e arquivos importáveis** está pronta. Os artefatos que vivem em ferramentas externas (GPT no ChatGPT, board no Miro, workflow no n8n, dashboard no Looker Studio, Notion, Forms) precisam ser **criados/importados** com os guias deste repositório. Nada foi testado nessas ferramentas.
 
 ## 1. Cenário de negócio
 Vendas e pós-vendas se comunicam mal, reclamações não têm tratamento estruturado, não há coleta e classificação automática de feedback e o atendimento repete respostas sobre processos que já existem em documentos.
